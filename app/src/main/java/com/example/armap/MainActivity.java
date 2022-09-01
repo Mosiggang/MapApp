@@ -1,6 +1,7 @@
 package com.example.armap;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.slidingpanelayout.widget.SlidingPaneLayout;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -20,7 +21,6 @@ import android.widget.Toast;
 
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
-import com.skt.Tmap.TMapMarkerItem2;
 import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapView;
 import com.skt.Tmap.poi_item.TMapPOIItem;
@@ -28,10 +28,11 @@ import com.skt.Tmap.poi_item.TMapPOIItem;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
+
+import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener{
     public LinearLayout linearLayoutTmap;
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public TMapView tMapView;
     public TextView placeName, placeAddr;
     public Button btnStart, btnDesti;
+    public SlidingUpPanelLayout slide;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,6 +53,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         placeAddr = (TextView)findViewById(R.id.placeAddr);
         btnStart = (Button)findViewById(R.id.btnStart);
         btnDesti = (Button)findViewById(R.id.btnDesti);
+        slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
+        slide.setTouchEnabled(false);
         tMapView = new TMapView(this);
 
         tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
@@ -76,12 +80,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void run() {
                         try{
-                            Log.d("에러 테스트", "트라이");
-                            ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place);
-                            if(poiItem.size() > 0){
-                                TMapMarkerItem[] markerItems = new TMapMarkerItem[poiItem.size()];
-                                TMapPoint[] tMapPoints = new TMapPoint[poiItem.size()];
-                                for (int i = 0; i < poiItem.size(); i++) {
+                            ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
+                            int len = poiItem.size();
+                            if(len > 0){
+                                TMapMarkerItem[] markerItems = new TMapMarkerItem[len];
+                                String[] addrs = new String[len];
+                                TMapPoint[] tMapPoints = new TMapPoint[len];
+                                for (int i = 0; i < len; i++) {
                                     TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
                                     markerItems[i] = new TMapMarkerItem();
                                     tMapPoints[i] = new TMapPoint(Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon));
@@ -89,15 +94,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     markerItems[i].setPosition(0.5f, 1.0f); // 마커의 중심점을 중앙, 하단으로 설정
                                     markerItems[i].setTMapPoint(tMapPoints[i]); // 마커의 좌표 지정
                                     markerItems[i].setCalloutTitle(item.getPOIName());
-                                    markerItems[i].setCalloutSubTitle(item.getPOIAddress());
+                                    addrs[i] = item.getPOIAddress();
                                     markerItems[i].setCalloutRightRect(new Rect());
                                     markerItems[i].setName(item.getPOIName()); // 마커의 타이틀 지정
                                     markerItems[i].setCanShowCallout(true);
-                                    tMapView.addMarkerItem("markerItem" + i, markerItems[i]); // 지도에 마커 추가
-                                    Log.d("POI Name: ", item.getPOIName().toString() + ", " +
-                                            "Address: " + item.getPOIAddress().replace("null", "") + ", " +
-                                            "Point: " + item.getPOIPoint().toString() + "Point fl:" + item.frontLat + "Point flo:" + item.frontLon);
+                                    tMapView.addMarkerItem(i + "", markerItems[i]); // 지도에 마커 추가
                                     }
+                                    tMapView.setZoomLevel(15);
                                     tMapView.setCenterPoint(tMapPoints[0].getLongitude(), tMapPoints[0].getLatitude());
                                     tMapView.setOnClickListenerCallBack(new TMapView.OnClickListenerCallback() {
                                         @Override
@@ -108,8 +111,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         @Override
                                         public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
                                             if(arrayList.size() > 0){
-                                                placeName.setText(arrayList.get(0).getCalloutTitle());
-                                                placeAddr.setText(arrayList.get(0).getCalloutSubTitle());
+                                                slide.setTouchEnabled(true);
+                                                placeName.setText(arrayList.get(0).getName());
+                                                String address = addrs[Integer.parseInt(arrayList.get(0).getID())];
+                                                placeAddr.setText(address);
+                                                tMapView.setCenterPoint(tMapPoint.getLongitude(), tMapPoint.getLatitude());
+                                                slide.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+                                            }
+                                            else{
+                                                slide.setTouchEnabled(false);
+                                                slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
                                             }
                                             return false;
                                         }
@@ -123,26 +134,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     searchError.show();
                                 }
                             },0);
-                        } catch (MalformedURLException e) {
+                        } catch (IOException | ParserConfigurationException | SAXException e) {
                             e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        } catch (ParserConfigurationException e) {
-                            e.printStackTrace();
-                        } catch (SAXException e) {
-                            e.printStackTrace();
-                        } catch (Exception e){
-                            handler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast searchError = Toast.makeText(v.getContext(),"검색된 장소가 없습니다", Toast.LENGTH_LONG);
-                                    searchError.show();
-                                }
-                            },0);
                         }
                     }
                 });
                 thread.start();
+                break;
+            case R.id.btnStart:
+                break;
+            case R.id.btnDesti:
                 break;
         }
     }

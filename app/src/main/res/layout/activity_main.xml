@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginTop="20dp"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity"
+    android:gravity="bottom"
+    android:id="@+id/slide"
+    app:umanoDragView="@id/drawer"
+    app:umanoPanelHeight="25dp"
+    app:umanoOverlay="false"
+    app:umanoFadeColor="@android:color/transparent"
+    app:umanoShadowHeight="10dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="409dp"
         android:layout_height="729dp"
         android:orientation="vertical"
@@ -16,122 +22,105 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:gravity="center"
-            android:orientation="horizontal">
-
-            <EditText
-                android:id="@+id/searchTxt"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:hint="장소 입력"
-                android:imeOptions="actionDone"
-                android:inputType="textPersonName"
-                android:textAlignment="center"
-                android:textColorHint="#404040" />
-
-            <Button
-                android:id="@+id/searchBtn"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="30dp"
-                android:text="검색" />
-        </LinearLayout>
-
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="580dp"
+            android:layout_height="match_parent"
             android:orientation="vertical">
 
             <LinearLayout
                 android:id="@+id/linearLayoutTmap"
                 android:layout_width="match_parent"
-                android:layout_height="580dp"
+                android:layout_height="match_parent"
                 android:orientation="vertical">
 
             </LinearLayout>
 
-            <SlidingDrawer
-                android:id="@+id/slidingDrawer1"
-                android:layout_width="match_parent"
-                android:layout_height="300dp"
-                android:layout_marginTop="280dp"
-                android:content="@+id/content"
-                android:handle="@+id/handle">
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:background="#FFFFFF"
+                android:gravity="center"
+                android:layout_marginTop="40dp"
+                android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/handle"
+                <EditText
+                    android:id="@+id/searchTxt"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="서랍 손잡이" />
+                    android:background="#FFFFFF"
+                    android:ems="10"
+                    android:hint="장소 입력"
+                    android:imeOptions="actionDone"
+                    android:inputType="textPersonName"
+                    android:textAlignment="center"
+                    android:textColorHint="#404040" />
 
-                <FrameLayout
-                    android:id="@+id/content"
-                    android:layout_width="match_parent"
-                    android:layout_height="300dp"
-                    android:background="#F3F3F3"
-                    android:gravity="center"
-                    android:orientation="vertical">
+                <Button
+                    android:id="@+id/searchBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginLeft="30dp"
+                    android:text="검색" />
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/placeName"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="20dp"
-                            android:paddingLeft="10dp"
-                            android:textColor="#000000"
-                            android:textSize="24sp" />
-
-                        <TextView
-                            android:id="@+id/placeAddr"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="20dp"
-                            android:paddingLeft="10dp"
-                            android:textColor="#000000"
-                            android:textSize="20sp" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:layout_marginTop="50dp"
-                            android:gravity="right"
-                            android:orientation="horizontal">
-
-                            <Button
-                                android:id="@+id/btnStart"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="출발" />
-
-                            <Button
-                                android:id="@+id/btnDesti"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="도착" />
-                        </LinearLayout>
-
-                    </LinearLayout>
-
-                </FrameLayout>
-            </SlidingDrawer>
+            </LinearLayout>
 
         </FrameLayout>
 
-        <Button
-            android:id="@+id/arBtn"
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:id="@+id/drawer"
+        android:layout_width="match_parent"
+        android:layout_height="130dp"
+        android:orientation="vertical">
+        <View
+            android:id="@+id/swipe"
+            android:background="@drawable/swipe_tip"
+            android:layout_width="50dp"
+            android:layout_height="20dp"
+            android:layout_marginBottom="10dp"
+            android:layout_gravity="center_horizontal"/>
+
+        <TextView
+            android:id="@+id/placeName"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="AR로 보기" />
+            android:layout_marginLeft="10dp"
+            android:text="TextView"
+            android:textColor="#000000"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/placeAddr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="TextView"
+            android:textColor="#000000"
+            android:textSize="16sp" />
+
+        <LinearLayout
+            android:id="@+id/dragView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="출발" />
+
+            <Button
+                android:id="@+id/btnDesti"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="도착" />
+        </LinearLayout>
     </LinearLayout>
-</androidx.constraintlayout.widget.ConstraintLayout>
+
+</com.sothree.slidinguppanel.SlidingUpPanelLayout>
