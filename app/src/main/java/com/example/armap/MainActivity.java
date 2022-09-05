@@ -1,12 +1,20 @@
 package com.example.armap;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -29,6 +37,8 @@ import com.skt.Tmap.poi_item.TMapPOIItem;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -43,10 +53,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public TextView placeName, placeAddr;
     public Button btnStart, btnEnd;
     public SlidingUpPanelLayout slide;
-    public TMapPoint userPoint;
+    public TMapPoint userPoint, cLocation;
     public String userPointName;
-    public TMapMarkerItem selectPin = new TMapMarkerItem();
-    public Bitmap pin, dot;
+    public TMapMarkerItem selectPin = new TMapMarkerItem(), cPin;
+    public Bitmap pin, r_dot, b_dot;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -59,25 +69,75 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStart = (Button)findViewById(R.id.btnStart);
         btnEnd = (Button)findViewById(R.id.btnEnd);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
-        slide.setTouchEnabled(false);
         tMapView = new TMapView(this);
-
-        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
+        tMapView.setSKTMapApiKey("TMAP APP KEY");
         linearLayoutTmap.addView(tMapView);
-
+        slide.setTouchEnabled(false);
+        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
         pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
-        dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
-
+        r_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
+        b_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.blue_dot);
         searchBtn.setOnClickListener(this);
         btnStart.setOnClickListener(this);
         btnEnd.setOnClickListener(this);
+        cPin = new TMapMarkerItem();
+        cPin.setIcon(b_dot);
     }
-
+    protected void onRestart() {
+        super.onRestart();
+        tMapView.removeAllMarkerItem();
+        placeName.setText(null);
+        placeAddr.setText(null);
+        searchTxt.setText(null);
+        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+        slide.setTouchEnabled(false);
+    }
+    protected void onStart() {
+        super.onStart();
+        final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        final LocationListener gpsLocationListener = new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                String provider = location.getProvider();  // 위치정보
+                Double userLon = location.getLongitude(); // 위도
+                Double userLat = location.getLatitude(); // 경도
+                cLocation = new TMapPoint(userLat, userLon);
+                if(cLocation != null){
+                    tMapView.removeMarkerItem("User");
+                    cPin.setTMapPoint(cLocation);
+                    tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
+                    tMapView.addMarkerItem("User", cPin);
+                }
+            }
+        };
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            /*Log.d("PERMISSON", "DENIY");
+            moveTaskToBack(true);
+            finishAndRemoveTask();
+            System.exit(0);
+            return;*/
+        }else{
+            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if(location != null){
+                String provider = location.getProvider();  // 위치정보
+                Double userLon = location.getLongitude(); // 위도
+                Double userLat = location.getLatitude(); // 경도
+                cLocation = new TMapPoint(userLat, userLon);
+                if(cLocation != null){
+                    tMapView.removeMarkerItem("User");
+                    cPin.setTMapPoint(cLocation);
+                    tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
+                    tMapView.addMarkerItem("User", cPin);
+                }
+            }
+        }
+    }
     @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.searchBtn:
                 tMapView.removeAllMarkerItem();
+                tMapView.addMarkerItem("User", cPin);
                 String place = searchTxt.getText().toString();
                 TMapData tmapdata = new TMapData();
                 Handler handler = new Handler(Looper.getMainLooper());
@@ -95,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                     TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
                                     markerItems[i] = new TMapMarkerItem();
                                     tMapPoints[i] = new TMapPoint(Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon));
-                                    markerItems[i].setIcon(dot);
+                                    markerItems[i].setIcon(r_dot);
                                     markerItems[i].setPosition(0.5f, 1.0f); // 마커의 중심점을 중앙, 하단으로 설정
                                     markerItems[i].setTMapPoint(tMapPoints[i]); // 마커의 좌표 지정
                                     markerItems[i].setCalloutTitle(item.getPOIName());
@@ -115,7 +175,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                         @Override
                                         public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
                                             if(arrayList.size() > 0 && !selectPin.equals(arrayList.get(0))) {
-                                                selectPin.setIcon(dot);
+                                                selectPin.setIcon(r_dot);
                                                 selectPin = arrayList.get(0);
                                                 selectPin.setIcon(pin);
                                                 selectPin.setPosition(0.5f, 1.3f);
@@ -159,12 +219,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private Intent setUserPoint(char type, String name){
-        Intent intent = new Intent(this, SelectPoint.class);
-        intent.putExtra("pType", type);
-        intent.putExtra("userPointName", name);
-        intent.putExtra("userPointAddress", placeAddr.getText());
-        intent.putExtra("userPointLat", userPoint.getLatitude());
-        intent.putExtra("userPointLon", userPoint.getLongitude());
+        Intent intent;
+        if(type == 'E'){//바로 도착을 눌렀을때 바로 경로 찾아줌, StartNavi의 인텐트도 고쳐야함
+            intent = new Intent(this, StartNavi.class);
+            intent.putExtra("sName", "현재위치");
+            intent.putExtra("eName", name);
+            intent.putExtra("sLat", cLocation.getLatitude());
+            intent.putExtra("sLon", cLocation.getLongitude());
+            intent.putExtra("eLat", userPoint.getLatitude());
+            intent.putExtra("eLon", userPoint.getLongitude());
+        }
+        else{
+            intent = new Intent(this, SelectPoint.class);
+            intent.putExtra("pType", type);
+            intent.putExtra("userPointName", name);
+            intent.putExtra("userPointAddress", placeAddr.getText());
+            intent.putExtra("userPointLat", userPoint.getLatitude());
+            intent.putExtra("userPointLon", userPoint.getLongitude());
+        }
         return intent;
     }
     @Override

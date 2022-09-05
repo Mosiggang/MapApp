@@ -3,25 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     tools:context=".MainActivity"
     android:gravity="bottom"
     android:id="@+id/slide"
     app:umanoDragView="@id/drawer"
-    app:umanoPanelHeight="25dp"
+    app:umanoPanelHeight="50dp"
     app:umanoOverlay="false"
     app:umanoFadeColor="@android:color/transparent"
     app:umanoShadowHeight="10dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="409dp"
-        android:layout_height="729dp"
-        android:orientation="vertical"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -39,9 +33,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
+                android:layout_marginTop="40dp"
                 android:background="#FFFFFF"
                 android:gravity="center"
-                android:layout_marginTop="40dp"
                 android:orientation="horizontal">
 
                 <EditText
@@ -55,7 +49,9 @@
                     android:inputType="textPersonName"
                     android:singleLine="true"
                     android:textAlignment="center"
-                    android:textColorHint="#404040" />
+                    android:textColor="?android:textColorPrimary"
+                    android:textColorHint="#404040"
+                    android:textColorLink="#000000" />
 
                 <Button
                     android:id="@+id/searchBtn"
@@ -69,64 +65,68 @@
         </FrameLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-    <LinearLayout
-        android:id="@+id/drawer"
-        android:layout_width="match_parent"
-        android:layout_height="130dp"
-        android:orientation="vertical">
-        <View
-            android:id="@+id/swipe"
-            android:background="@drawable/swipe_tip"
-            android:layout_width="50dp"
-            android:layout_height="20dp"
-            android:layout_marginBottom="10dp"
-            android:layout_gravity="center_horizontal"/>
-
-        <TextView
-            android:id="@+id/placeName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:singleLine="true"
-            android:text="TextView"
-            android:textColor="#000000"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            app:autoSizeMaxTextSize="24sp"
-            app:autoSizeMinTextSize="12sp"
-            app:autoSizeStepGranularity="2sp"
-            app:autoSizeTextType="uniform" />
-
-        <TextView
-            android:id="@+id/placeAddr"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="10dp"
-            android:text="TextView"
-            android:textColor="#000000"
-            android:textSize="14sp" />
 
         <LinearLayout
-            android:id="@+id/dragView"
+            android:id="@+id/drawer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="right"
-            android:orientation="horizontal">
+            android:layout_height="150dp"
+            android:clickable="true"
+            android:focusable="false"
+            android:orientation="vertical">
 
-            <Button
-                android:id="@+id/btnStart"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
-                android:text="출발" />
+            <View
+                android:id="@+id/swipe"
+                android:layout_width="50dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="30dp"
+                android:background="@drawable/swipe_tip" />
 
-            <Button
-                android:id="@+id/btnEnd"
-                android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/placeName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
-                android:text="도착" />
+                android:layout_marginLeft="10dp"
+                android:singleLine="true"
+                android:text="TextView"
+                android:textColor="?android:textColorSecondary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                app:autoSizeMaxTextSize="24sp"
+                app:autoSizeMinTextSize="12sp"
+                app:autoSizeStepGranularity="2sp"
+                app:autoSizeTextType="uniform" />
+
+            <TextView
+                android:id="@+id/placeAddr"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="10dp"
+                android:text="TextView"
+                android:textColor="?android:textColorSecondary"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/dragView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="right"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btnStart"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="10dp"
+                    android:text="출발" />
+
+                <Button
+                    android:id="@+id/btnEnd"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginRight="10dp"
+                    android:text="도착" />
+            </LinearLayout>
         </LinearLayout>
-    </LinearLayout>
 
 </com.sothree.slidinguppanel.SlidingUpPanelLayout>

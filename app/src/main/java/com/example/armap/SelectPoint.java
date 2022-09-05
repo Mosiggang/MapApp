@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -32,6 +33,7 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,10 +48,12 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
     public SlidingUpPanelLayout slide;
     public TextView placeName, placeAddr;
     public String[] addrs;
-    public String sName, eName;
+    public String sName, eName, searchPlace;
     public Double fLat, fLon;
     public Bitmap pin, dot;
     public TMapMarkerItem selectPin = new TMapMarkerItem();
+    public int searchChecker = 0;
+    public char type;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -64,18 +68,35 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         placeAddr = (TextView)findViewById(R.id.placeAddr);
         sBtn = (Button)findViewById(R.id.btnStart);
         eBtn = (Button)findViewById(R.id.btnEnd);
-        slide.setTouchEnabled(false);
         tMapView = new TMapView(this);
+        tMapView.setSKTMapApiKey("TMAP APP KEY");
+        linearLayoutTmap.addView(tMapView);
+        slide.setTouchEnabled(false);
+        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
 
         pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
         dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
 
-        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
-        linearLayoutTmap.addView(tMapView);
         sSearch.setOnClickListener(this);
         eSearch.setOnClickListener(this);
         sBtn.setOnClickListener(this);
         eBtn.setOnClickListener(this);
+    }
+    protected void onRestart() {
+        super.onRestart();
+        sPoint = ePoint = null;
+        sName = eName = null;
+        placeName.setText(null);
+        placeAddr.setText(null);
+        focusTxt = null;
+        sPlace.setText(null);
+        ePlace.setText(null);
+        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+        slide.setTouchEnabled(false);
+        tMapView.removeAllMarkerItem();
+        getIntent().removeExtra("pType");
+        getIntent().getExtras().clear();
+        Log.d("INTENT", "ONRESTART");
     }
 
     protected void onStart() {
@@ -83,13 +104,14 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         Intent intent = getIntent();
         Double lat, lon;
         String pName, pAddr;
-        char type = intent.getCharExtra("pType",'n');
+        tMapView.removeAllMarkerItem();
+        type = intent.getCharExtra("pType",'n');
         if(type != 'n'){
+            Log.d("INTENT", "ONSTART");
             lat = intent.getDoubleExtra("userPointLat",0);
             lon = intent.getDoubleExtra("userPointLon",0);
             pName = intent.getStringExtra("userPointName");
             pAddr = intent.getStringExtra("userPointAddress");
-            setMarker(0, pName, lat, lon, pin);
             addrs = new String[1];
             addrs[0] = pAddr;
             setMarkerTouch();
@@ -106,6 +128,10 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                     setMarker(61, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
                     break;
             }
+            getIntent().getExtras().clear();
+        }
+        else{
+            setMarkerTouch();
         }
         sPlace.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
@@ -118,20 +144,13 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                         ePlace.setText(null);
                     }
                     if(selectPin != null){
-                        Log.d("TEST", selectPin.getName());
                         selectPin.setIcon(dot);
                     }
                 }
                 else{
-                    if(sPoint != null){
-                        sPlace.setText(sName);
-                    }
-                    else if(sSearch.callOnClick() || linearLayoutTmap.hasFocus()){
-                        sPlace.setText(sName);
-                    }
-                    else{
-                        sPlace.setText(null);
-                    }
+                        searchChecker = 0;
+                        searchPlace = sPlace.getText().toString();
+                        sSearch.callOnClick();
                 }
             }
         });
@@ -150,14 +169,9 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                     }
                 }
                 else{
-                    if(ePoint != null){
-                        ePlace.setText(eName);
-                    }
-                    else if(eSearch.callOnClick() || linearLayoutTmap.hasFocus()){
-                    }
-                    else{
-                        ePlace.setText(null);
-                    }
+                    searchChecker = 0;
+                    searchPlace = ePlace.getText().toString();
+                    eSearch.callOnClick();
                 }
             }
         });
@@ -166,17 +180,49 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.sSearchBtn:
-                sBtn.setVisibility(View.VISIBLE);
-                eBtn.setVisibility(View.INVISIBLE);
-                searchPlace(sPlace.getText().toString(), v.getContext());
-                tMapView.removeMarkerItem(60+"");
+                if(sSearch.isPressed()){
+                    searchChecker++;
+                    if(searchChecker == 2 && focusTxt.equals(sPlace)){
+                        sBtn.setVisibility(View.VISIBLE);
+                        eBtn.setVisibility(View.INVISIBLE);
+                        sPlace.setText(searchPlace);
+                        searchPlace(searchPlace, v.getContext());
+                        sPoint = null;
+                        tMapView.removeMarkerItem(60+"");
+                        searchChecker = 0;
+                    }
+                }else{
+                    searchChecker++;
+                    if(sPoint != null){
+                        sPlace.setText(sName);
+                    }
+                    else{
+                        sPlace.setText(null);
+                    }
+                }
                 break;
 
             case R.id.eSearchBtn:
-                sBtn.setVisibility(View.INVISIBLE);
-                eBtn.setVisibility(View.VISIBLE);
-                searchPlace(ePlace.getText().toString(), v.getContext());
-                tMapView.removeMarkerItem(61+"");
+                if(eSearch.isPressed()){
+                    searchChecker++;
+                    if(searchChecker == 2 && focusTxt.equals(ePlace)){
+                        sBtn.setVisibility(View.INVISIBLE);
+                        eBtn.setVisibility(View.VISIBLE);
+                        ePlace.setText(searchPlace);
+                        searchPlace(searchPlace, v.getContext());
+                        ePoint = null;
+                        tMapView.removeMarkerItem(61+"");
+                        searchChecker = 0;
+                    }
+                }else{
+                    searchChecker++;
+                    if(ePoint != null){
+                        ePlace.setText(eName);
+                    }
+                    else{
+                        ePlace.setText(null);
+                    }
+                }
                 break;
             case R.id.btnStart:
                 tMapView.removeMarkerItem(60+"");
@@ -312,5 +358,21 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
             }
         }
         return super.dispatchTouchEvent(ev);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()){
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+    @Override
+    public void onBackPressed(){
+        super.onBackPressed();
+        finish();
     }
 }

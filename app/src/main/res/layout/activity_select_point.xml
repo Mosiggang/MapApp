@@ -4,18 +4,18 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/slide"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:gravity="bottom"
     app:umanoDragView="@id/drawer"
     app:umanoFadeColor="@android:color/transparent"
     app:umanoOverlay="false"
-    app:umanoPanelHeight="25dp"
+    app:umanoPanelHeight="50dp"
     app:umanoShadowHeight="10dp"
     tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:layout_width="409dp"
-        android:layout_height="729dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
         android:orientation="vertical"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -69,6 +69,7 @@
                         android:inputType="textPersonName"
                         android:singleLine="true"
                         android:textAlignment="center"
+                        android:textColor="?android:textColorPrimary"
                         android:textColorHint="#404040" />
 
                     <Button
@@ -103,6 +104,7 @@
                         android:background="#FFFFFF"
                         android:ems="10"
                         android:hint="장소 입력"
+                        android:textColor="?android:textColorPrimary"
                         android:imeOptions="actionDone"
                         android:inputType="textPersonName"
                         android:singleLine="true"
@@ -125,7 +127,7 @@
     <LinearLayout
         android:id="@+id/drawer"
         android:layout_width="match_parent"
-        android:layout_height="130dp"
+        android:layout_height="150dp"
         android:gravity="clip_vertical|left"
         android:orientation="vertical">
 
@@ -134,7 +136,7 @@
             android:layout_width="50dp"
             android:layout_height="20dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="30dp"
             android:background="@drawable/swipe_tip" />
 
         <TextView
@@ -145,7 +147,7 @@
             android:autoText="false"
             android:singleLine="true"
             android:text="TextView"
-            android:textColor="#000000"
+            android:textColor="?android:textColorSecondary"
             android:textSize="20sp"
             android:textStyle="bold"
             app:autoSizeMaxTextSize="24sp"
@@ -161,7 +163,7 @@
             android:autoText="false"
             android:singleLine="false"
             android:text="TextView"
-            android:textColor="#000000"
+            android:textColor="?android:textColorSecondary"
             android:textSize="14sp"
             app:autoSizeTextType="uniform" />
 
