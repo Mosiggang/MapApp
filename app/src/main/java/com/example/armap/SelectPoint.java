@@ -69,7 +69,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         sBtn = (Button)findViewById(R.id.btnStart);
         eBtn = (Button)findViewById(R.id.btnEnd);
         tMapView = new TMapView(this);
-        tMapView.setSKTMapApiKey("TMAP APP KEY");
+        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
@@ -107,7 +107,6 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         tMapView.removeAllMarkerItem();
         type = intent.getCharExtra("pType",'n');
         if(type != 'n'){
-            Log.d("INTENT", "ONSTART");
             lat = intent.getDoubleExtra("userPointLat",0);
             lon = intent.getDoubleExtra("userPointLon",0);
             pName = intent.getStringExtra("userPointName");
@@ -133,46 +132,48 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         else{
             setMarkerTouch();
         }
-        sPlace.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if(hasFocus){
-                    focusTxt = sPlace;
-                    sPlace.setText(null);
-                    deleteAllMarker();
-                    if(ePoint == null){
-                        ePlace.setText(null);
-                    }
-                    if(selectPin != null){
-                        selectPin.setIcon(dot);
-                    }
+        sPlace.setOnFocusChangeListener((v, hasFocus) -> {
+            if(hasFocus){
+                slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+                slide.setTouchEnabled(false);
+                placeName.setText("장소를 선택해주세요");
+                placeAddr.setText("장소를 선택해주세요");
+                focusTxt = sPlace;
+                sPlace.setText(null);
+                deleteAllMarker();
+                if(ePoint == null){
+                    ePlace.setText(null);
                 }
-                else{
-                        searchChecker = 0;
-                        searchPlace = sPlace.getText().toString();
-                        sSearch.callOnClick();
+                if(selectPin != null){
+                    selectPin.setIcon(dot);
                 }
             }
-        });
-        ePlace.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View v, boolean hasFocus) {
-                if(hasFocus){
-                    focusTxt = ePlace;
-                    ePlace.setText(null);
-                    deleteAllMarker();
-                    if(sPoint == null){
-                        sPlace.setText(null);
-                    }
-                    if(selectPin != null){
-                        selectPin.setIcon(dot);
-                    }
-                }
-                else{
+            else{
                     searchChecker = 0;
-                    searchPlace = ePlace.getText().toString();
-                    eSearch.callOnClick();
+                    searchPlace = sPlace.getText().toString();
+                    sSearch.callOnClick();
+            }
+        });
+        ePlace.setOnFocusChangeListener((v, hasFocus) -> {
+            if(hasFocus){
+                slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+                slide.setTouchEnabled(false);
+                placeName.setText("장소를 선택해주세요");
+                placeAddr.setText("장소를 선택해주세요");
+                focusTxt = ePlace;
+                ePlace.setText(null);
+                deleteAllMarker();
+                if(sPoint == null){
+                    sPlace.setText(null);
                 }
+                if(selectPin != null){
+                    selectPin.setIcon(dot);
+                }
+            }
+            else{
+                searchChecker = 0;
+                searchPlace = ePlace.getText().toString();
+                eSearch.callOnClick();
             }
         });
     }
@@ -183,6 +184,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                 if(sSearch.isPressed()){
                     searchChecker++;
                     if(searchChecker == 2 && focusTxt.equals(sPlace)){
+
                         sBtn.setVisibility(View.VISIBLE);
                         eBtn.setVisibility(View.INVISIBLE);
                         sPlace.setText(searchPlace);
@@ -253,34 +255,28 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         String place = userPlace;
         TMapData tmapdata = new TMapData();
         Handler handler = new Handler(Looper.getMainLooper());
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
-                    int len = poiItem.size();
-                    if (len > 0) {
-                        addrs = new String[len];
-                        for (int i = 0; i < len; i++) {
-                            TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
-                            addrs[i] = item.getPOIAddress();
-                            setMarker(i, item.getPOIName(), Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon), dot);
-                            if(i == 0){
-                                tMapView.setCenterPoint(Double.parseDouble(item.frontLon), Double.parseDouble(item.frontLat));
-                            }
+        Thread thread = new Thread(() -> {
+            try {
+                ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
+                int len = poiItem.size();
+                if (len > 0) {
+                    addrs = new String[len];
+                    for (int i = 0; i < len; i++) {
+                        TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
+                        addrs[i] = item.getPOIAddress();
+                        setMarker(i, item.getPOIName(), Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon), dot);
+                        if(i == 0){
+                            tMapView.setCenterPoint(Double.parseDouble(item.frontLon), Double.parseDouble(item.frontLat));
                         }
                     }
-                }catch (NullPointerException e){
-                    handler.postDelayed(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast searchError = Toast.makeText(context,"검색된 장소가 없습니다", Toast.LENGTH_LONG);
-                            searchError.show();
-                        }
-                    },0);
-                } catch (IOException | ParserConfigurationException | SAXException e) {
-                    e.printStackTrace();
                 }
+            }catch (NullPointerException e){
+                handler.postDelayed(() -> {
+                    Toast searchError = Toast.makeText(context,"검색된 장소가 없습니다", Toast.LENGTH_LONG);
+                    searchError.show();
+                },0);
+            } catch (IOException | ParserConfigurationException | SAXException e) {
+                e.printStackTrace();
             }
         });
         thread.start();
@@ -338,6 +334,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
             intent.putExtra("eName", eName);
             intent.putExtra("eLat", ePoint.getLatitude());
             intent.putExtra("eLon", ePoint.getLongitude());
+            intent.putExtra("PathType", "S2D");
             startActivity(intent);
         }
     }

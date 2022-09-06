@@ -57,7 +57,7 @@
 
                         <TextView
                             android:id="@+id/sTxt"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="출발"
@@ -89,7 +89,7 @@
 
                         <TextView
                             android:id="@+id/eTxt"
-                            android:layout_width="wrap_content"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="도착"
@@ -113,7 +113,7 @@
                 </LinearLayout>
 
                 <Button
-                    android:id="@+id/btn"
+                    android:id="@+id/btnCLocation"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
@@ -129,8 +129,8 @@
     <LinearLayout
         android:id="@+id/drawer"
         android:layout_width="match_parent"
-        android:layout_height="95dp"
-        android:gravity="clip_vertical|left"
+        android:layout_height="130dp"
+        android:gravity="clip_vertical|start"
         android:orientation="vertical">
 
         <View
@@ -138,22 +138,22 @@
             android:layout_width="50dp"
             android:layout_height="20dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="10dp"
+            android:layout_marginBottom="30dp"
             android:background="@drawable/swipe_tip" />
 
         <FrameLayout
             android:id="@+id/dragView"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_gravity="right|end"
+            android:layout_gravity="end|end"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/startAR"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="right"
-                android:layout_marginRight="10dp"
+                android:layout_height="60dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="10dp"
                 android:text="AR안내시작" />
 
         </FrameLayout>

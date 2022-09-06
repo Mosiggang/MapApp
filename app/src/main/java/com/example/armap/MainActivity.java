@@ -1,8 +1,9 @@
 package com.example.armap;
 
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.Context;
@@ -10,10 +11,14 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PointF;
 import android.graphics.Rect;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.location.Location;
-import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -29,6 +34,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.skt.Tmap.TMapData;
+import com.skt.Tmap.TMapGpsManager;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapView;
@@ -37,15 +43,13 @@ import com.skt.Tmap.poi_item.TMapPOIItem;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener, TMapGpsManager.onLocationChangedCallback{
     public LinearLayout linearLayoutTmap;
     public Button searchBtn;
     public EditText searchTxt;
@@ -56,11 +60,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public TMapPoint userPoint, cLocation;
     public String userPointName;
     public TMapMarkerItem selectPin = new TMapMarkerItem(), cPin;
-    public Bitmap pin, r_dot, b_dot;
+    public Bitmap pin, r_dot, b_dot, direc;
+    public SensorManager sensorManager;
+    public Sensor acc, mag;
+    private final float[] accRead = new float[3];
+    private final float[] magRead = new float[3];
+    private final float[] rMatrix = new float[9];
+    private final float[] oAngles = new float[3];
+    public TMapGpsManager gps;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);;
+        setContentView(R.layout.activity_main);
         linearLayoutTmap = (LinearLayout)findViewById(R.id.linearLayoutTmap);
         searchBtn = (Button)findViewById(R.id.searchBtn);
         searchTxt = (EditText)findViewById(R.id.searchTxt);
@@ -70,19 +81,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnEnd = (Button)findViewById(R.id.btnEnd);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
         tMapView = new TMapView(this);
-        tMapView.setSKTMapApiKey("TMAP APP KEY");
+        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
         pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
         r_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
-        b_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.blue_dot);
+        b_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.direction);
         searchBtn.setOnClickListener(this);
         btnStart.setOnClickListener(this);
         btnEnd.setOnClickListener(this);
         cPin = new TMapMarkerItem();
         cPin.setIcon(b_dot);
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        }else {
+            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location != null) {
+                String provider = location.getProvider();  // 위치정보
+                Double userLon = location.getLongitude(); // 위도
+                Double userLat = location.getLatitude(); // 경도
+                cLocation = new TMapPoint(userLat, userLon);
+                if (userPoint != null) {
+                    cPin.setTMapPoint(userPoint);
+                    tMapView.setCenterPoint(userLon, userLat);
+                    tMapView.addMarkerItem("user", cPin);
+                }
+            }
+        }
     }
+
     protected void onRestart() {
         super.onRestart();
         tMapView.removeAllMarkerItem();
@@ -94,115 +125,162 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     protected void onStart() {
         super.onStart();
-        final LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        final LocationListener gpsLocationListener = new LocationListener() {
-            @Override
-            public void onLocationChanged(@NonNull Location location) {
-                String provider = location.getProvider();  // 위치정보
-                Double userLon = location.getLongitude(); // 위도
-                Double userLat = location.getLatitude(); // 경도
-                cLocation = new TMapPoint(userLat, userLon);
-                if(cLocation != null){
-                    tMapView.removeMarkerItem("User");
-                    cPin.setTMapPoint(cLocation);
-                    tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
-                    tMapView.addMarkerItem("User", cPin);
-                }
-            }
-        };
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            /*Log.d("PERMISSON", "DENIY");
-            moveTaskToBack(true);
-            finishAndRemoveTask();
-            System.exit(0);
-            return;*/
-        }else{
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if(location != null){
-                String provider = location.getProvider();  // 위치정보
-                Double userLon = location.getLongitude(); // 위도
-                Double userLat = location.getLatitude(); // 경도
-                cLocation = new TMapPoint(userLat, userLon);
-                if(cLocation != null){
-                    tMapView.removeMarkerItem("User");
-                    cPin.setTMapPoint(cLocation);
-                    tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
-                    tMapView.addMarkerItem("User", cPin);
-                }
+        gps = new TMapGpsManager(this);
+        gps.setMinTime(1000);
+        gps.setMinDistance(5);
+        gps.setProvider(TMapGpsManager.GPS_PROVIDER);
+        gps.OpenGps();
+        gps.setProvider(TMapGpsManager.NETWORK_PROVIDER);
+        gps.OpenGps();
+        cLocation = gps.getLocation();
+        tMapView.setMarkerRotate(false);
+        tMapView.setPOIRotate(false);
+        tMapView.setRotateEnable(true);
+        cPin.setIcon(b_dot);
+        tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
+        tMapView.addMarkerItem("user", cPin);
+        double lat1 = 37.556759264185274;
+        double lat2 = 37.55672315696065;
+        double lon1 = 126.92364104902308;
+        double lon2 = 126.92359383142113;
+        Log.d("METER", measure(lat1,lon1,lat2,lon2) + "!!");
+    }
+    public double measure(double lat1,double lon1,double lat2,double lon2){  // generally used geo measurement function
+        double R = 6378.137; // Radius of earth in KM
+        double dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
+        double dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
+        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        double d = R * c;
+        return d * 1000; // meters
+    }
+    protected void onResume() {
+        super.onResume();
+        acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        if (acc != null) {
+            sensorManager.registerListener((SensorEventListener) this, acc, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+        if (mag != null) {
+            sensorManager.registerListener((SensorEventListener) this, mag, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+    protected void onPause() {
+        super.onPause();
+        gps.CloseGps();
+        sensorManager.unregisterListener((SensorEventListener) this);
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accRead, 0, accRead.length);
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magRead, 0, magRead.length);
+        }
+        if(accRead != null && magRead != null){
+            updateOrientationAngles();
+            try {
+                tMapView.removeMarkerItem("user");
+                Bitmap newPin = getRotatedBitmap(b_dot, (float) Math.toDegrees(oAngles[0]) - 90);
+                cPin.setIcon(newPin);
+                tMapView.addMarkerItem("user",cPin);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
+
+    public Bitmap getRotatedBitmap(Bitmap bitmap, float degrees){
+        if(bitmap == null) return null;
+        if (degrees == 0.0f) return bitmap;
+        Matrix m = new Matrix();
+        m.setRotate(degrees + tMapView.getRotate(), (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    public void updateOrientationAngles() {
+        boolean success;
+        success = SensorManager.getRotationMatrix(rMatrix, null, accRead, magRead);
+        if(success){
+            SensorManager.getOrientation(rMatrix, oAngles);
+
+        }
+    }
+
     @Override
     public void onClick(View v) {
         switch (v.getId()){
             case R.id.searchBtn:
                 tMapView.removeAllMarkerItem();
-                tMapView.addMarkerItem("User", cPin);
                 String place = searchTxt.getText().toString();
                 TMapData tmapdata = new TMapData();
                 Handler handler = new Handler(Looper.getMainLooper());
-                Thread thread = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try{
-                            ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
-                            int len = poiItem.size();
-                            if(len > 0){
-                                TMapMarkerItem[] markerItems = new TMapMarkerItem[len];
-                                String[] addrs = new String[len];
-                                TMapPoint[] tMapPoints = new TMapPoint[len];
-                                for (int i = 0; i < len; i++) {
-                                    TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
-                                    markerItems[i] = new TMapMarkerItem();
-                                    tMapPoints[i] = new TMapPoint(Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon));
-                                    markerItems[i].setIcon(r_dot);
-                                    markerItems[i].setPosition(0.5f, 1.0f); // 마커의 중심점을 중앙, 하단으로 설정
-                                    markerItems[i].setTMapPoint(tMapPoints[i]); // 마커의 좌표 지정
-                                    markerItems[i].setCalloutTitle(item.getPOIName());
-                                    addrs[i] = item.getPOIAddress();
-                                    markerItems[i].setName(item.getPOIName()); // 마커의 타이틀 지정
-                                    markerItems[i].setCanShowCallout(false);
-                                    tMapView.addMarkerItem(i + "", markerItems[i]); // 지도에 마커 추가
-                                    }
-                                    tMapView.setZoomLevel(15);
-                                    tMapView.setCenterPoint(tMapPoints[0].getLongitude(), tMapPoints[0].getLatitude());
-                                    tMapView.setOnClickListenerCallBack(new TMapView.OnClickListenerCallback() {
-                                        @Override
-                                        public boolean onPressEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
-                                            return false;
-                                        }
-
-                                        @Override
-                                        public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
-                                            if(arrayList.size() > 0 && !selectPin.equals(arrayList.get(0))) {
-                                                selectPin.setIcon(r_dot);
-                                                selectPin = arrayList.get(0);
-                                                selectPin.setIcon(pin);
-                                                selectPin.setPosition(0.5f, 1.3f);
-                                                slide.setTouchEnabled(true);
-                                                placeName.setText(arrayList.get(0).getName());
-                                                String address = addrs[Integer.parseInt(arrayList.get(0).getID())];
-                                                placeAddr.setText(address);
-                                                tMapView.setCenterPoint(tMapPoint.getLongitude(), tMapPoint.getLatitude());
-                                                slide.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
-                                                userPoint = tMapPoint;
-                                                userPointName = arrayList.get(0).getName();
-                                            }
-                                            return false;
-                                        }
-                                    });
-                            }
-                        }catch (NullPointerException e){
-                            handler.postDelayed(new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast searchError = Toast.makeText(v.getContext(),"검색된 장소가 없습니다", Toast.LENGTH_LONG);
-                                    searchError.show();
+                Thread thread = new Thread(() -> {
+                    try{
+                        ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
+                        int len = poiItem.size();
+                        if(len > 0){
+                            TMapMarkerItem[] markerItems = new TMapMarkerItem[len];
+                            String[] addrs = new String[len];
+                            TMapPoint[] tMapPoints = new TMapPoint[len];
+                            for (int i = 0; i < len; i++) {
+                                TMapPOIItem item = (TMapPOIItem) poiItem.get(i);
+                                markerItems[i] = new TMapMarkerItem();
+                                tMapPoints[i] = new TMapPoint(Double.parseDouble(item.frontLat), Double.parseDouble(item.frontLon));
+                                markerItems[i].setIcon(r_dot);
+                                markerItems[i].setPosition(0.5f, 1.0f); // 마커의 중심점을 중앙, 하단으로 설정
+                                markerItems[i].setTMapPoint(tMapPoints[i]); // 마커의 좌표 지정
+                                markerItems[i].setCalloutTitle(item.getPOIName());
+                                addrs[i] = item.getPOIAddress();
+                                markerItems[i].setName(item.getPOIName()); // 마커의 타이틀 지정
+                                markerItems[i].setCanShowCallout(false);
+                                tMapView.addMarkerItem(i + "", markerItems[i]); // 지도에 마커 추가
                                 }
-                            },0);
-                        } catch (IOException | ParserConfigurationException | SAXException e) {
-                            e.printStackTrace();
+                                tMapView.setZoomLevel(15);
+                                tMapView.setCenterPoint(tMapPoints[0].getLongitude(), tMapPoints[0].getLatitude());
+                                tMapView.setOnClickListenerCallBack(new TMapView.OnClickListenerCallback() {
+                                    @Override
+                                    public boolean onPressEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
+                                        return false;
+                                    }
+
+                                    @Override
+                                    public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
+                                        if(arrayList.size() > 0 && !selectPin.equals(arrayList.get(0))) {
+                                            selectPin.setIcon(r_dot);
+                                            selectPin = arrayList.get(0);
+                                            selectPin.setIcon(pin);
+                                            selectPin.setPosition(0.5f, 1.3f);
+                                            slide.setTouchEnabled(true);
+                                            placeName.setText(arrayList.get(0).getName());
+                                            String address = addrs[Integer.parseInt(arrayList.get(0).getID())];
+                                            placeAddr.setText(address);
+                                            tMapView.setCenterPoint(tMapPoint.getLongitude(), tMapPoint.getLatitude());
+                                            slide.setPanelState(SlidingUpPanelLayout.PanelState.EXPANDED);
+                                            userPoint = tMapPoint;
+                                            userPointName = arrayList.get(0).getName();
+                                        }
+                                        return false;
+                                    }
+                                });
+
                         }
+                    }catch (NullPointerException e){
+                        handler.postDelayed(() -> {
+                            Toast searchError = Toast.makeText(v.getContext(),"검색된 장소가 없습니다", Toast.LENGTH_LONG);
+                            searchError.show();
+                        },0);
+                    } catch (IOException | ParserConfigurationException | SAXException e) {
+                        e.printStackTrace();
                     }
                 });
                 thread.start();
@@ -218,6 +296,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    @Override
+    public void onLocationChange(Location location) {
+        double userLat = location.getLatitude();
+        double userLon = location.getLongitude();
+        cLocation = gps.getLocation();
+        cPin.setTMapPoint(cLocation);
+        tMapView.setCenterPoint(userLon, userLat);
+        tMapView.setLocationPoint(userLon,userLat);
+    }
+
     private Intent setUserPoint(char type, String name){
         Intent intent;
         if(type == 'E'){//바로 도착을 눌렀을때 바로 경로 찾아줌, StartNavi의 인텐트도 고쳐야함
@@ -228,6 +316,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             intent.putExtra("sLon", cLocation.getLongitude());
             intent.putExtra("eLat", userPoint.getLatitude());
             intent.putExtra("eLon", userPoint.getLongitude());
+            intent.putExtra("PathType", "C2D");
         }
         else{
             intent = new Intent(this, SelectPoint.class);
@@ -239,6 +328,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return intent;
     }
+
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
         View focusView = getCurrentFocus();
@@ -258,4 +348,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
         return super.dispatchTouchEvent(ev);
     }
+
 }
