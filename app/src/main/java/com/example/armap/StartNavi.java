@@ -5,6 +5,7 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import android.Manifest;
+import android.app.DownloadManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -20,8 +21,11 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 
+import android.os.Handler;
+import android.util.JsonReader;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.textclassifier.TextLinks;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -34,14 +38,29 @@ import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapPolyLine;
 import com.skt.Tmap.TMapView;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
+import com.unity3d.player.UnityPlayerActivity;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
 import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.parsers.ParserConfigurationException;
 
 public class StartNavi extends AppCompatActivity implements SensorEventListener, TMapGpsManager.onLocationChangedCallback {
@@ -63,8 +82,10 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
     private final float[] magRead = new float[3];
     private final float[] rMatrix = new float[9];
     private final float[] oAngles = new float[3];
-    public RequestThread getPath;
-    public Document pathXml;
+    public PathRequestThread getPath;
+    public List<TMapPoint> pathPoints = new ArrayList<>();
+    public ArrayList<List<Double>> roadPoint = new ArrayList<>();
+    public ArrayList<List<Double>> nearUserPoint = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,7 +95,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         ePlace = (TextView) findViewById(R.id.ePointTxt);
         linearLayoutTmap = (LinearLayout) findViewById(R.id.linearLayoutTmap);
         startAR = (Button) findViewById(R.id.startAR);
-        cLocationBtn = (Button)findViewById(R.id.btnCLocation);
+        cLocationBtn = (Button) findViewById(R.id.btnCLocation);
         slide = (SlidingUpPanelLayout) findViewById(R.id.slide);
         tMapView = new TMapView(this);
         tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
@@ -94,8 +115,10 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         gps.OpenGps();
 
         startAR.setOnClickListener(v -> {
-            Toast t = Toast.makeText(v.getContext(), "준비중인 서비스입니다.", Toast.LENGTH_LONG);
-            t.show();
+            Intent unityIntent = new Intent(this, UnityPlayerActivity.class);
+            startActivity(unityIntent);
+            //Toast t = Toast.makeText(v.getContext(), "준비중인 서비스입니다.", Toast.LENGTH_LONG);
+            //t.show();
         });
         cLocationBtn.setOnClickListener(v -> {
             tMapView.removeMarkerItem("user");
@@ -109,7 +132,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
         if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-        }else {
+        } else {
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (location != null) {
@@ -154,29 +177,27 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         sLon = intent.getDoubleExtra("sLon", 0);
         eLat = intent.getDoubleExtra("eLat", 0);
         eLon = intent.getDoubleExtra("eLon", 0);
-        if(pathType.equals("C2D")){
+        if (pathType.equals("C2D")) {
             userPoint = gps.getLocation();
             userPin.setTMapPoint(userPoint);
             userPin.setIcon(u_pin);
             tMapView.setCenterPoint(userPoint.getLongitude(), userPoint.getLatitude());
             tMapView.addMarkerItem("user", userPin);
-        }else{
+        } else {
             tMapView.setCenterPoint(sLon, sLat);
         }
         ePoint = new TMapPoint(eLat, eLon);
         userPoint = new TMapPoint(sLat, sLon);
-
-        try {
-            sName = URLEncoder.encode(startName, "UTF-8");
-            eName = URLEncoder.encode(endName, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
         sPlace.setText(startName);
         ePlace.setText(endName);
 
-        getPath = new RequestThread();
+        getPath = new PathRequestThread();
         getPath.start();
+        try {
+            getPath.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -240,26 +261,66 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
 
     @Override
     public void onLocationChange(Location location) {
+        Log.d("FIRST LOC", userPoint.getLongitude() + ", " + userPoint.getLatitude());
         sLat = location.getLatitude();
         sLon = location.getLongitude();
         userPoint = gps.getLocation();
         userPin.setTMapPoint(userPoint);
         tMapView.setCenterPoint(userLon, userLat);
         tMapView.setLocationPoint(userLon, userLat);
+        if (isInPath() == false && pathType.equals("C2D")) {
+            Toast.makeText(tMapView.getContext(), "경로를 이탈하여 재탐색합니다.", Toast.LENGTH_LONG).show();
+            try {
+                Intent intent = new Intent(this, StartNavi.class);
+                intent.putExtra("sName",startName);
+                intent.putExtra("eName",endName);
+                intent.putExtra("PathType",pathType);
+                intent.putExtra("sLat", userPoint.getLatitude());
+                intent.putExtra("sLon", userPoint.getLongitude());
+                intent.putExtra("eLat", eLat);
+                intent.putExtra("eLon", eLon);
+                finish();
+                overridePendingTransition(0,0);
+                startActivity(intent);
+                overridePendingTransition(0,0);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
     }
 
-    public boolean isInPath(){
+    public boolean isInPath() {
         boolean inPath = true;
-
+        double pointLon, pointLat;
+        double uPointLon, uPointLat;
+        uPointLon = (Math.floor(userPoint.getLongitude() * 100000) / 100000.0);
+        uPointLat = (Math.floor(userPoint.getLatitude() * 1000000) / 1000000.0);
+        for (int i = 0; i < pathPoints.size(); i++) {
+            pointLon = (Math.floor(pathPoints.get(i).getLongitude() * 100000) / 100000.0);
+            pointLat = (Math.floor(pathPoints.get(i).getLatitude() * 1000000) / 1000000.0);
+            if ((pointLon + 0.00007 >= uPointLon) && (pointLon - 0.00007 <= uPointLon)) {
+                if((pointLat + 0.00005 >= uPointLat) && (pointLat - 0.00005 <= uPointLat))
+                Log.d("SAME LON", (pointLon == uPointLon) + "");
+                Log.d("SAME LAT", (pointLat == uPointLat) + "");
+                inPath = true;
+                return inPath;
+            } else {
+                Log.d("LONGS", pointLon + ", " + uPointLon);
+                Log.d("LATS", pointLat + ", " + uPointLat);
+                inPath = false;
+            }
+        }
         return inPath;
     }
-    class RequestThread extends Thread {
+
+    class PathRequestThread extends Thread {
         TMapData tMapData = new TMapData();
         TMapPolyLine tMapPolyLine = new TMapPolyLine();
-        public void run(){
+
+        public void run() {
             try {
                 TMapMarkerItem[] markerItem = new TMapMarkerItem[2];
-                for(int i = 0; i < 2; i++){
+                for (int i = 0; i < 2; i++) {
                     markerItem[i] = new TMapMarkerItem();
                     markerItem[i].setPosition(0.5f, 1.0f); // 마커의 중심점을 중앙, 하단으로 설정
                 }
@@ -275,20 +336,9 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
                 tMapView.addMarkerItem("e", markerItem[0]);
                 tMapView.addMarkerItem("s", markerItem[1]);
                 tMapView.addTMapPolyLine("path", tMapPolyLine);
-
-                tMapData.findPathDataAllType(TMapData.TMapPathType.PEDESTRIAN_PATH, userPoint, ePoint, document -> {
-                    pathXml = document;
-                    Element root = document.getDocumentElement();
-                    NodeList nodeListPlacemark = root.getElementsByTagName("Placemark");
-                    for( int i = 0; i < nodeListPlacemark.getLength(); i++) {
-                        NodeList nodeListPlacemarkItem = nodeListPlacemark.item(i).getChildNodes();
-                        for( int j = 0; j < nodeListPlacemarkItem.getLength(); j++) {
-                            if( nodeListPlacemarkItem.item(j).getNodeName().equals("description") ) {
-                                Log.d("XML_TEST", nodeListPlacemarkItem.item(j).getTextContent().trim() );
-                            }
-                        }
-                    }
-                });
+                for (int i = 0; i < tMapPolyLine.getLinePoint().size(); i++) {
+                    pathPoints.add(tMapPolyLine.getLinePoint().get(i));
+                }
             } catch (IOException | ParserConfigurationException | SAXException e) {
                 e.printStackTrace();
             }

@@ -10,7 +10,14 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        flatDir {
+            include 'unityLibrary:Firebase.androidlib'
+            dirs "${project(':unityLibrary').projectDir}/libs"
+        }
     }
 }
+
 rootProject.name = "ARmap"
 include ':app'
+include ':unityLibrary'
+project(':unityLibrary').projectDir = new File('C:\\Users\\JeongDongJin\\Desktop\\ARmap2\\unityLibrary')

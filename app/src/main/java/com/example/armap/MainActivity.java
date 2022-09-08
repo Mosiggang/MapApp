@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        tMapView = new TMapView(this);
         linearLayoutTmap = (LinearLayout)findViewById(R.id.linearLayoutTmap);
         searchBtn = (Button)findViewById(R.id.searchBtn);
         searchTxt = (EditText)findViewById(R.id.searchTxt);
@@ -80,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStart = (Button)findViewById(R.id.btnStart);
         btnEnd = (Button)findViewById(R.id.btnEnd);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
-        tMapView = new TMapView(this);
         tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
@@ -95,6 +95,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cPin.setIcon(b_dot);
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        Log.d("ACTIVATED", 3 + "");
         if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
         }else {
@@ -110,8 +111,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     tMapView.setCenterPoint(userLon, userLat);
                     tMapView.addMarkerItem("user", cPin);
                 }
+                Log.d("ACTIVATED", 4 + "");
             }
         }
+        gps = new TMapGpsManager(this);
+        gps.setMinTime(1000);
+        gps.setMinDistance(5);
+        gps.setProvider(TMapGpsManager.GPS_PROVIDER);
+        gps.OpenGps();
+        gps.setProvider(TMapGpsManager.NETWORK_PROVIDER);
+        gps.OpenGps();
+        cLocation = gps.getLocation();
     }
 
     protected void onRestart() {
@@ -125,27 +135,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     protected void onStart() {
         super.onStart();
-        gps = new TMapGpsManager(this);
-        gps.setMinTime(1000);
-        gps.setMinDistance(5);
-        gps.setProvider(TMapGpsManager.GPS_PROVIDER);
-        gps.OpenGps();
-        gps.setProvider(TMapGpsManager.NETWORK_PROVIDER);
-        gps.OpenGps();
-        cLocation = gps.getLocation();
+
         tMapView.setMarkerRotate(false);
         tMapView.setPOIRotate(false);
         tMapView.setRotateEnable(true);
         cPin.setIcon(b_dot);
         tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
         tMapView.addMarkerItem("user", cPin);
-        double lat1 = 37.556759264185274;
-        double lat2 = 37.55672315696065;
-        double lon1 = 126.92364104902308;
-        double lon2 = 126.92359383142113;
-        Log.d("METER", measure(lat1,lon1,lat2,lon2) + "!!");
+
     }
-    public double measure(double lat1,double lon1,double lat2,double lon2){  // generally used geo measurement function
+    /*public double measure(double lat1,double lon1,double lat2,double lon2){  // generally used geo measurement function
         double R = 6378.137; // Radius of earth in KM
         double dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
         double dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
@@ -155,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         double d = R * c;
         return d * 1000; // meters
-    }
+    }*/
     protected void onResume() {
         super.onResume();
         acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
