@@ -38,7 +38,6 @@ import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapPolyLine;
 import com.skt.Tmap.TMapView;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-import com.unity3d.player.UnityPlayerActivity;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -98,7 +97,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         cLocationBtn = (Button) findViewById(R.id.btnCLocation);
         slide = (SlidingUpPanelLayout) findViewById(R.id.slide);
         tMapView = new TMapView(this);
-        tMapView.setSKTMapApiKey("TMAP APPKEY");
+        tMapView.setSKTMapApiKey("TMAP APPKEY");//l7xx4df6476b09fd4a12962883291fb19544
         linearLayoutTmap.addView(tMapView);
         r_pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
         b_pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.b_pin);
@@ -115,10 +114,11 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
         gps.OpenGps();
 
         startAR.setOnClickListener(v -> {
-            Intent unityIntent = new Intent(this, UnityPlayerActivity.class);
-            startActivity(unityIntent);
+            //Intent unityIntent = new Intent(this, UnityPlayerActivity.class);
+            //startActivity(unityIntent);
             //Toast t = Toast.makeText(v.getContext(), "준비중인 서비스입니다.", Toast.LENGTH_LONG);
-            //t.show();
+            //t.show();s
+            Log.d("CommitTest:" , "COMMIT");
         });
         cLocationBtn.setOnClickListener(v -> {
             tMapView.removeMarkerItem("user");
