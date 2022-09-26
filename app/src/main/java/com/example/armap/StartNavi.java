@@ -118,7 +118,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
             //startActivity(unityIntent);
             //Toast t = Toast.makeText(v.getContext(), "준비중인 서비스입니다.", Toast.LENGTH_LONG);
             //t.show();s
-            Log.d("CommitTest:" , "COMMIT BY JIN1751");
+            Log.d("CommitTest:" , "COMMIT BY JIN175");
         });
         cLocationBtn.setOnClickListener(v -> {
             tMapView.removeMarkerItem("user");
