@@ -44,6 +44,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -60,7 +61,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public TMapPoint userPoint, cLocation;
     public String userPointName;
     public TMapMarkerItem selectPin = new TMapMarkerItem(), cPin;
-    public Bitmap pin, r_dot, b_dot, direc;
+    public Bitmap pin, r_dot, b_dot;
     public SensorManager sensorManager;
     public Sensor acc, mag;
     private final float[] accRead = new float[3];
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStart = (Button)findViewById(R.id.btnStart);
         btnEnd = (Button)findViewById(R.id.btnEnd);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
-        tMapView.setSKTMapApiKey("TMAP APPKEY");
+        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
@@ -95,23 +96,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         cPin.setIcon(b_dot);
         sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
         int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-        Log.d("ACTIVATED", 3 + "");
         if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+            //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
         }else {
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
             if (location != null) {
-                String provider = location.getProvider();  // 위치정보
-                Double userLon = location.getLongitude(); // 위도
-                Double userLat = location.getLatitude(); // 경도
+                double userLon = location.getLongitude(); // 위도
+                double userLat = location.getLatitude(); // 경도
                 cLocation = new TMapPoint(userLat, userLon);
                 if (userPoint != null) {
                     cPin.setTMapPoint(userPoint);
                     tMapView.setCenterPoint(userLon, userLat);
                     tMapView.addMarkerItem("user", cPin);
                 }
-                Log.d("ACTIVATED", 4 + "");
+
             }
         }
         gps = new TMapGpsManager(this);
@@ -135,7 +135,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
     protected void onStart() {
         super.onStart();
-
         tMapView.setMarkerRotate(false);
         tMapView.setPOIRotate(false);
         tMapView.setRotateEnable(true);
@@ -144,17 +143,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tMapView.addMarkerItem("user", cPin);
 
     }
-    /*public double measure(double lat1,double lon1,double lat2,double lon2){  // generally used geo measurement function
-        double R = 6378.137; // Radius of earth in KM
-        double dLat = lat2 * Math.PI / 180 - lat1 * Math.PI / 180;
-        double dLon = lon2 * Math.PI / 180 - lon1 * Math.PI / 180;
-        double a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        double d = R * c;
-        return d * 1000; // meters
-    }*/
+
     protected void onResume() {
         super.onResume();
         acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -192,6 +181,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
         }
     }
+
 
     public Bitmap getRotatedBitmap(Bitmap bitmap, float degrees){
         if(bitmap == null) return null;
@@ -243,24 +233,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                 markerItems[i].setName(item.getPOIName()); // 마커의 타이틀 지정
                                 markerItems[i].setCanShowCallout(false);
                                 tMapView.addMarkerItem(i + "", markerItems[i]); // 지도에 마커 추가
+                            }
+                            tMapView.setZoomLevel(15);
+                            tMapView.setCenterPoint(tMapPoints[0].getLongitude(), tMapPoints[0].getLatitude());
+                            tMapView.setOnClickListenerCallBack(new TMapView.OnClickListenerCallback() {
+                                @Override
+                                public boolean onPressEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
+                                    return false;
                                 }
-                                tMapView.setZoomLevel(15);
-                                tMapView.setCenterPoint(tMapPoints[0].getLongitude(), tMapPoints[0].getLatitude());
-                                tMapView.setOnClickListenerCallBack(new TMapView.OnClickListenerCallback() {
-                                    @Override
-                                    public boolean onPressEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
-                                        return false;
-                                    }
 
-                                    @Override
-                                    public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
-                                        if(arrayList.size() > 0 && !selectPin.equals(arrayList.get(0))) {
-                                            selectPin.setIcon(r_dot);
-                                            selectPin = arrayList.get(0);
-                                            selectPin.setIcon(pin);
-                                            selectPin.setPosition(0.5f, 1.3f);
-                                            slide.setTouchEnabled(true);
-                                            placeName.setText(arrayList.get(0).getName());
+                                @Override
+                                public boolean onPressUpEvent(ArrayList<TMapMarkerItem> arrayList, ArrayList<TMapPOIItem> arrayList1, TMapPoint tMapPoint, PointF pointF) {
+                                    if(arrayList.size() > 0 && !selectPin.equals(arrayList.get(0))) {
+                                        selectPin.setIcon(r_dot);
+                                        selectPin = arrayList.get(0);
+                                        selectPin.setIcon(pin);
+                                        selectPin.setPosition(0.5f, 1.3f);
+                                        slide.setTouchEnabled(true);
+                                        placeName.setText(arrayList.get(0).getName());
+                                        if(!Objects.equals(arrayList.get(0).getID(), "user")){
                                             String address = addrs[Integer.parseInt(arrayList.get(0).getID())];
                                             placeAddr.setText(address);
                                             tMapView.setCenterPoint(tMapPoint.getLongitude(), tMapPoint.getLatitude());
@@ -268,9 +259,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                                             userPoint = tMapPoint;
                                             userPointName = arrayList.get(0).getName();
                                         }
-                                        return false;
                                     }
-                                });
+                                    return false;
+                                }
+                            });
 
                         }
                     }catch (NullPointerException e){
@@ -304,6 +296,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         tMapView.setCenterPoint(userLon, userLat);
         tMapView.setLocationPoint(userLon,userLat);
     }
+
 
     private Intent setUserPoint(char type, String name){
         Intent intent;

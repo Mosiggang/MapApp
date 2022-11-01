@@ -3,10 +3,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="com.example.armap">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_GPS" />
 
     <application
         android:allowBackup="true"
@@ -18,6 +19,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ARmap"
         tools:targetApi="31">
+        <activity
+            android:name=".UnityHandler"
+            android:exported="false" />
         <activity
             android:name=".StartNavi"
             android:exported="false" />
@@ -33,7 +37,6 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.unity3d.player.UnityPlayerActivity"></activity>
     </application>
 
 </manifest>

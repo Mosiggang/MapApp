@@ -5,9 +5,10 @@
       <map>
         <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/drawable/ic_launcher_background.xml" value="0.2435" />
         <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_main.xml" value="0.14285714285714285" />
-        <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_select_point.xml" value="0.2857142857142857" />
+        <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_select_point.xml" value="0.11363636363636363" />
         <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_start_navi.xml" value="0.18857142857142858" />
         <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_unity_handler.xml" value="0.44635416666666666" />
+        <entry key="..\:/Users/JeongDongJin/Desktop/ARmap2/app/src/main/res/layout/activity_unity_player.xml" value="0.3109375" />
       </map>
     </option>
   </component>

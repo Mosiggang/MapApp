@@ -8,7 +8,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.Rect;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -22,20 +21,15 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
-
 import com.skt.Tmap.TMapData;
 import com.skt.Tmap.TMapMarkerItem;
 import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapView;
 import com.skt.Tmap.poi_item.TMapPOIItem;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-
 import org.xml.sax.SAXException;
-
 import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
 import java.util.ArrayList;
-
 import javax.xml.parsers.ParserConfigurationException;
 
 public class SelectPoint extends AppCompatActivity implements View.OnClickListener {
@@ -69,7 +63,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         sBtn = (Button)findViewById(R.id.btnStart);
         eBtn = (Button)findViewById(R.id.btnEnd);
         tMapView = new TMapView(this);
-        tMapView.setSKTMapApiKey("TMAP APP KEY");
+        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
@@ -96,15 +90,16 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         tMapView.removeAllMarkerItem();
         getIntent().removeExtra("pType");
         getIntent().getExtras().clear();
-        Log.d("INTENT", "ONRESTART");
     }
 
     protected void onStart() {
         super.onStart();
         Intent intent = getIntent();
-        Double lat, lon;
+        double lat, lon;
         String pName, pAddr;
         tMapView.removeAllMarkerItem();
+        tMapView.setPathRotate(true);
+        tMapView.setRotateEnable(true);
         type = intent.getCharExtra("pType",'n');
         if(type != 'n'){
             lat = intent.getDoubleExtra("userPointLat",0);
@@ -149,9 +144,9 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                 }
             }
             else{
-                    searchChecker = 0;
-                    searchPlace = sPlace.getText().toString();
-                    sSearch.callOnClick();
+                searchChecker = 0;
+                searchPlace = sPlace.getText().toString();
+                sSearch.callOnClick();
             }
         });
         ePlace.setOnFocusChangeListener((v, hasFocus) -> {
@@ -359,13 +354,11 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()){
-            case android.R.id.home:
-                onBackPressed();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (item.getItemId() == android.R.id.home) {
+            onBackPressed();
+            return true;
         }
+        return super.onOptionsItemSelected(item);
     }
     @Override
     public void onBackPressed(){
