@@ -24,6 +24,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -52,7 +53,6 @@ import com.sothree.slidinguppanel.SlidingUpPanelLayout;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener, TMapGpsManager.onLocationChangedCallback{
     public LinearLayout linearLayoutTmap;
-    public Button searchBtn;
     public EditText searchTxt;
     public TMapView tMapView;
     public TextView placeName, placeAddr;
@@ -72,10 +72,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("MAIN ACTIVITY","WOW CREATE");
         setContentView(R.layout.activity_main);
         tMapView = new TMapView(this);
         linearLayoutTmap = (LinearLayout)findViewById(R.id.linearLayoutTmap);
-        searchBtn = (Button)findViewById(R.id.searchBtn);
         searchTxt = (EditText)findViewById(R.id.searchTxt);
         placeName = (TextView)findViewById(R.id.placeName);
         placeAddr = (TextView)findViewById(R.id.placeAddr);
@@ -89,133 +89,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
         r_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
         b_dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.direction);
-        searchBtn.setOnClickListener(this);
         btnStart.setOnClickListener(this);
         btnEnd.setOnClickListener(this);
-        cPin = new TMapMarkerItem();
-        cPin.setIcon(b_dot);
-        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
-        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
-        if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            //ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION}, 0);
-        }else {
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-            if (location != null) {
-                double userLon = location.getLongitude(); // 위도
-                double userLat = location.getLatitude(); // 경도
-                cLocation = new TMapPoint(userLat, userLon);
-                if (userPoint != null) {
-                    cPin.setTMapPoint(userPoint);
-                    tMapView.setCenterPoint(userLon, userLat);
-                    tMapView.addMarkerItem("user", cPin);
-                }
-
-            }
-        }
-        gps = new TMapGpsManager(this);
-        gps.setMinTime(1000);
-        gps.setMinDistance(5);
-        gps.setProvider(TMapGpsManager.GPS_PROVIDER);
-        gps.OpenGps();
-        gps.setProvider(TMapGpsManager.NETWORK_PROVIDER);
-        gps.OpenGps();
-        cLocation = gps.getLocation();
-    }
-
-    protected void onRestart() {
-        super.onRestart();
-        tMapView.removeAllMarkerItem();
-        placeName.setText(null);
-        placeAddr.setText(null);
-        searchTxt.setText(null);
-        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
-        slide.setTouchEnabled(false);
-    }
-    protected void onStart() {
-        super.onStart();
-        tMapView.setMarkerRotate(false);
-        tMapView.setPOIRotate(false);
-        tMapView.setRotateEnable(true);
-        cPin.setIcon(b_dot);
-        tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
-        tMapView.addMarkerItem("user", cPin);
-
-    }
-
-    protected void onResume() {
-        super.onResume();
-        acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-
-        if (acc != null) {
-            sensorManager.registerListener((SensorEventListener) this, acc, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
-        }
-        if (mag != null) {
-            sensorManager.registerListener((SensorEventListener) this, mag, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
-        }
-    }
-    protected void onPause() {
-        super.onPause();
-        gps.CloseGps();
-        sensorManager.unregisterListener((SensorEventListener) this);
-    }
-
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
-            System.arraycopy(event.values, 0, accRead, 0, accRead.length);
-        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
-            System.arraycopy(event.values, 0, magRead, 0, magRead.length);
-        }
-        if(accRead != null && magRead != null){
-            updateOrientationAngles();
-            try {
-                tMapView.removeMarkerItem("user");
-                Bitmap newPin = getRotatedBitmap(b_dot, (float) Math.toDegrees(oAngles[0]) - 90);
-                cPin.setIcon(newPin);
-                tMapView.addMarkerItem("user",cPin);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-
-    public Bitmap getRotatedBitmap(Bitmap bitmap, float degrees){
-        if(bitmap == null) return null;
-        if (degrees == 0.0f) return bitmap;
-        Matrix m = new Matrix();
-        m.setRotate(degrees + tMapView.getRotate(), (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
-        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int accuracy) {
-
-    }
-
-    public void updateOrientationAngles() {
-        boolean success;
-        success = SensorManager.getRotationMatrix(rMatrix, null, accRead, magRead);
-        if(success){
-            SensorManager.getOrientation(rMatrix, oAngles);
-
-        }
-    }
-
-    @Override
-    public void onClick(View v) {
-        switch (v.getId()){
-            case R.id.searchBtn:
+        searchTxt.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
                 tMapView.removeAllMarkerItem();
                 String place = searchTxt.getText().toString();
                 TMapData tmapdata = new TMapData();
                 Handler handler = new Handler(Looper.getMainLooper());
+                Log.d("START POI:", place);
+
                 Thread thread = new Thread(() -> {
                     try{
-                        ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
+                        ArrayList<TMapPOIItem> poiItem = tmapdata.findAroundKeywordPOI(cLocation,place, 33,100);
+                        Log.d("AROUND POI:", place + ", " + poiItem.size());
                         int len = poiItem.size();
                         if(len > 0){
                             TMapMarkerItem[] markerItems = new TMapMarkerItem[len];
@@ -275,7 +163,136 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 });
                 thread.start();
-                break;
+                return false;
+            }
+        });
+        cPin = new TMapMarkerItem();
+        cPin.setIcon(b_dot);
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        setUserLocation();
+
+    }
+
+    protected void onRestart() {
+        super.onRestart();
+        Log.d("MAIN ACTIVITY","WOW RESTART");
+    }
+    protected void onStart() {
+        super.onStart();
+        tMapView.removeAllMarkerItem();
+
+        placeName.setText(null);
+        placeAddr.setText(null);
+        searchTxt.setText(null);
+        sensorManager = (SensorManager)getSystemService(Context.SENSOR_SERVICE);
+        setUserLocation();
+        Log.d("MAIN ACTIVITY","WOW START");
+        tMapView.setMarkerRotate(false);
+        tMapView.setPOIRotate(false);
+        tMapView.setRotateEnable(true);
+        cPin.setIcon(b_dot);
+        tMapView.setCenterPoint(cLocation.getLongitude(), cLocation.getLatitude());
+        tMapView.addMarkerItem("user", cPin);
+
+    }
+
+    protected void onResume() {
+        super.onResume();
+        slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
+        slide.setTouchEnabled(false);
+        Log.d("MAIN ACTIVITY","WOW RESUME");
+        acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+
+        if (acc != null) {
+            sensorManager.registerListener((SensorEventListener) this, acc, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+        if (mag != null) {
+            sensorManager.registerListener((SensorEventListener) this, mag, SensorManager.SENSOR_DELAY_NORMAL, SensorManager.SENSOR_DELAY_UI);
+        }
+    }
+    protected void onPause() {
+        super.onPause();
+        Log.d("MAIN ACTIVITY","WOW PAUSE");
+        gps.CloseGps();
+        sensorManager.unregisterListener((SensorEventListener) this);
+    }
+    protected void setUserLocation(){
+        //tMapView = new TMapView(this);
+
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck == PackageManager.PERMISSION_DENIED) { //위치 권한 확인
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+        }else {
+            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location != null) {
+                Double userLon = location.getLongitude(); // 위도
+                Double userLat = location.getLatitude(); // 경도
+                cLocation = new TMapPoint(userLat, userLon);
+                if (userPoint != null) {
+                    cPin.setTMapPoint(userPoint);
+                    tMapView.setCenterPoint(userLon, userLat);
+                    tMapView.addMarkerItem("user", cPin);
+                }
+            }
+        }
+        gps = new TMapGpsManager(this);
+        gps.setMinTime(1000);
+        gps.setMinDistance(5);
+        gps.setProvider(TMapGpsManager.GPS_PROVIDER);
+        gps.OpenGps();
+        gps.setProvider(TMapGpsManager.NETWORK_PROVIDER);
+        gps.OpenGps();
+        cLocation = gps.getLocation();
+    }
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            System.arraycopy(event.values, 0, accRead, 0, accRead.length);
+        } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+            System.arraycopy(event.values, 0, magRead, 0, magRead.length);
+        }
+        if(accRead != null && magRead != null){
+            updateOrientationAngles();
+            try {
+                tMapView.removeMarkerItem("user");
+                Bitmap newPin = getRotatedBitmap(b_dot, (float) Math.toDegrees(oAngles[0]) - 90);
+                cPin.setIcon(newPin);
+                tMapView.addMarkerItem("user",cPin);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
+    public Bitmap getRotatedBitmap(Bitmap bitmap, float degrees){
+        if(bitmap == null) return null;
+        if (degrees == 0.0f) return bitmap;
+        Matrix m = new Matrix();
+        m.setRotate(degrees + tMapView.getRotate(), (float) bitmap.getWidth() / 2, (float) bitmap.getHeight() / 2);
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), m, true);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+    }
+
+    public void updateOrientationAngles() {
+        boolean success;
+        success = SensorManager.getRotationMatrix(rMatrix, null, accRead, magRead);
+        if(success){
+            SensorManager.getOrientation(rMatrix, oAngles);
+
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()){
+
             case R.id.btnStart:
                 Intent sIntent = setUserPoint('S', userPointName);
                 startActivity(sIntent);

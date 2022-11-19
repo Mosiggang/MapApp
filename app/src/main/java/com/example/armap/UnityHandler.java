@@ -4,11 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
-
 import com.unity3d.player.UnityPlayer;
 import com.unity3d.player.UnityPlayerActivity;
-
 import java.util.ArrayList;
 
 public class UnityHandler extends AppCompatActivity {

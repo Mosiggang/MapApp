@@ -2,20 +2,22 @@
 <com.sothree.slidinguppanel.SlidingUpPanelLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/slide"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    tools:context=".MainActivity"
+    android:background="#FFFFFF"
     android:gravity="bottom"
-    android:id="@+id/slide"
     app:umanoDragView="@id/drawer"
-    app:umanoPanelHeight="50dp"
-    app:umanoOverlay="false"
     app:umanoFadeColor="@android:color/transparent"
-    app:umanoShadowHeight="10dp">
+    app:umanoOverlay="false"
+    app:umanoPanelHeight="50dp"
+    app:umanoShadowHeight="10dp"
+    tools:context=".MainActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
+
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -30,35 +32,31 @@
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="350dp"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="40dp"
-                android:background="#FFFFFF"
+                android:background="@drawable/layout_style"
+                android:elevation="30dp"
                 android:gravity="center"
                 android:orientation="horizontal">
 
                 <EditText
                     android:id="@+id/searchTxt"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#FFFFFF"
+                    android:background="@drawable/layout_style"
                     android:ems="10"
-                    android:hint="장소 입력"
-                    android:imeOptions="actionDone"
+                    android:hint="장소 검색"
+                    android:imeActionLabel="검색"
+                    android:imeOptions="actionSearch"
                     android:inputType="textPersonName"
+                    android:minHeight="48dp"
                     android:singleLine="true"
                     android:textAlignment="center"
                     android:textColor="?android:textColorPrimary"
-                    android:textColorHint="#404040"
+                    android:textColorHint="#757575"
                     android:textColorLink="#000000" />
-
-                <Button
-                    android:id="@+id/searchBtn"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="30dp"
-                    android:text="검색" />
 
             </LinearLayout>
 
@@ -66,67 +64,75 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-        <LinearLayout
-            android:id="@+id/drawer"
+    <LinearLayout
+        android:id="@+id/drawer"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:clickable="true"
+        android:focusable="false"
+        android:orientation="vertical">
+
+        <View
+            android:id="@+id/swipe"
+            android:layout_width="50dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="30dp"
+            android:background="@drawable/swipe_tip" />
+
+        <TextView
+            android:id="@+id/placeName"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
-            android:clickable="true"
-            android:focusable="false"
-            android:orientation="vertical">
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:singleLine="true"
+            android:text="TextView"
+            android:textColor="?android:textColorSecondary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:autoSizeMaxTextSize="24sp"
+            app:autoSizeMinTextSize="12sp"
+            app:autoSizeStepGranularity="2sp"
+            app:autoSizeTextType="uniform" />
 
-            <View
-                android:id="@+id/swipe"
-                android:layout_width="50dp"
-                android:layout_height="20dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginBottom="30dp"
-                android:background="@drawable/swipe_tip" />
+        <TextView
+            android:id="@+id/placeAddr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="TextView"
+            android:textColor="?android:textColorSecondary"
+            android:textSize="14sp" />
 
-            <TextView
-                android:id="@+id/placeName"
-                android:layout_width="match_parent"
+        <LinearLayout
+            android:id="@+id/dragView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="right"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnStart"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:singleLine="true"
-                android:text="TextView"
-                android:textColor="?android:textColorSecondary"
+                android:layout_marginRight="10dp"
+                android:background="@drawable/btn_style"
+                android:text="출발"
+                android:textColor="#2167F3"
                 android:textSize="20sp"
-                android:textStyle="bold"
-                app:autoSizeMaxTextSize="24sp"
-                app:autoSizeMinTextSize="12sp"
-                app:autoSizeStepGranularity="2sp"
-                app:autoSizeTextType="uniform" />
+                android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/placeAddr"
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnEnd"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="10dp"
-                android:text="TextView"
-                android:textColor="?android:textColorSecondary"
-                android:textSize="14sp" />
-
-            <LinearLayout
-                android:id="@+id/dragView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="right"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/btnStart"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="10dp"
-                    android:text="출발" />
-
-                <Button
-                    android:id="@+id/btnEnd"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginRight="10dp"
-                    android:text="도착" />
-            </LinearLayout>
+                android:layout_marginRight="10dp"
+                android:background="@drawable/btn_style2"
+                android:text="도착"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold" />
         </LinearLayout>
+    </LinearLayout>
 
 </com.sothree.slidinguppanel.SlidingUpPanelLayout>

@@ -31,7 +31,6 @@ import com.skt.Tmap.TMapPoint;
 import com.skt.Tmap.TMapPolyLine;
 import com.skt.Tmap.TMapView;
 import com.sothree.slidinguppanel.SlidingUpPanelLayout;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -69,6 +68,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("START NAVI","QOO CREATE");
         setContentView(R.layout.activity_start_navi);
         sPlace = (TextView) findViewById(R.id.sPointTxt);
         ePlace = (TextView) findViewById(R.id.ePointTxt);
@@ -134,6 +134,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
 
     protected void onResume() {
         super.onResume();
+        Log.d("START NAVI","QOO RESUME");
         acc = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         if (acc != null) {
@@ -147,12 +148,14 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
 
     protected void onPause() {
         super.onPause();
+        Log.d("START NAVI","QOO PAUSE");
         gps.CloseGps();
         sensorManager.unregisterListener((SensorEventListener) this);
     }
 
     protected void onStart() {
         super.onStart();
+        Log.d("START NAVI","QOO START");
         pathPoints = new ArrayList<>();
         descriptions = new ArrayList<>();
         descriptionPoints = new ArrayList<>();
@@ -173,6 +176,7 @@ public class StartNavi extends AppCompatActivity implements SensorEventListener,
             userPin.setTMapPoint(userPoint);
             userPin.setIcon(u_pin);
             tMapView.addMarkerItem("user", userPin);
+
         } else {
             slide.setTouchEnabled(false);
             Toast.makeText(this,"AR 사용이 제한되는 검색 설정입니다.",Toast.LENGTH_SHORT).show();

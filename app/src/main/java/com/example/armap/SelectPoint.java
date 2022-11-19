@@ -9,12 +9,15 @@ import android.graphics.BitmapFactory;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -44,18 +47,17 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
     public String[] addrs;
     public String sName, eName, searchPlace;
     public Double fLat, fLon;
-    public Bitmap pin, dot;
+    public Bitmap pin, dot, sPin;
     public TMapMarkerItem selectPin = new TMapMarkerItem();
     public int searchChecker = 0;
     public char type;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Log.d("SELECT POINT","HEY CREATE");
         setContentView(R.layout.activity_select_point);
         sPlace = (EditText) findViewById(R.id.sPointTxt);
         ePlace = (EditText) findViewById(R.id.ePointTxt);
-        sSearch = (Button)findViewById(R.id.sSearchBtn);
-        eSearch = (Button)findViewById(R.id.eSearchBtn);
         linearLayoutTmap = (LinearLayout)findViewById(R.id.linearLayoutTmap);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
         placeName = (TextView)findViewById(R.id.placeName);
@@ -69,16 +71,42 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
 
         pin = BitmapFactory.decodeResource(this.getResources(), R.drawable.r_pin);
+        sPin = BitmapFactory.decodeResource(this.getResources(), R.drawable.b_pin);
         dot = BitmapFactory.decodeResource(this.getResources(), R.drawable.red_dot_pin);
 
-        sSearch.setOnClickListener(this);
-        eSearch.setOnClickListener(this);
         sBtn.setOnClickListener(this);
         eBtn.setOnClickListener(this);
+
+        sPlace.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                searchPlace = sPlace.getText().toString();
+                sBtn.setVisibility(View.VISIBLE);
+                eBtn.setVisibility(View.INVISIBLE);
+                searchPlaceFunc(searchPlace, v.getContext(), "start");
+                sPoint = null;
+                tMapView.removeMarkerItem(101+"");
+                return false;
+            }
+        });
+        ePlace.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                searchPlace = ePlace.getText().toString();
+                sBtn.setVisibility(View.INVISIBLE);
+                eBtn.setVisibility(View.VISIBLE);
+                ePlace.setText(searchPlace);
+                searchPlaceFunc(searchPlace, v.getContext(), "end");
+                ePoint = null;
+                tMapView.removeMarkerItem(102+"");
+                return false;
+            }
+        });
     }
     protected void onRestart() {
         super.onRestart();
-        sPoint = ePoint = null;
+        Log.d("SELECT POINT","HEY RESTART");
+        /*sPoint = ePoint = null;
         sName = eName = null;
         placeName.setText(null);
         placeAddr.setText(null);
@@ -89,15 +117,16 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         slide.setTouchEnabled(false);
         tMapView.removeAllMarkerItem();
         getIntent().removeExtra("pType");
-        getIntent().getExtras().clear();
+        getIntent().getExtras().clear();*/
     }
 
     protected void onStart() {
         super.onStart();
+        Log.d("SELECT POINT","HEY START");
         Intent intent = getIntent();
         double lat, lon;
         String pName, pAddr;
-        tMapView.removeAllMarkerItem();
+        //tMapView.removeAllMarkerItem();
         tMapView.setPathRotate(true);
         tMapView.setRotateEnable(true);
         type = intent.getCharExtra("pType",'n');
@@ -114,12 +143,12 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                 case 'S':
                     sPoint = setUserPoint(sPlace, pName, lat, lon);
                     sName = pName;
-                    setMarker(60, sName, sPoint.getLatitude(), sPoint.getLongitude(), pin);
+                    setMarker(101, sName, sPoint.getLatitude(), sPoint.getLongitude(), sPin);
                     break;
                 case 'E':
                     ePoint = setUserPoint(ePlace, pName, lat, lon);
                     eName = pName;
-                    setMarker(61, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
+                    setMarker(102, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
                     break;
             }
             getIntent().getExtras().clear();
@@ -128,6 +157,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
             setMarkerTouch();
         }
         sPlace.setOnFocusChangeListener((v, hasFocus) -> {
+
             if(hasFocus){
                 slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
                 slide.setTouchEnabled(false);
@@ -142,11 +172,6 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                 if(selectPin != null){
                     selectPin.setIcon(dot);
                 }
-            }
-            else{
-                searchChecker = 0;
-                searchPlace = sPlace.getText().toString();
-                sSearch.callOnClick();
             }
         });
         ePlace.setOnFocusChangeListener((v, hasFocus) -> {
@@ -165,75 +190,24 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
                     selectPin.setIcon(dot);
                 }
             }
-            else{
-                searchChecker = 0;
-                searchPlace = ePlace.getText().toString();
-                eSearch.callOnClick();
-            }
         });
     }
     @Override
     public void onClick(View v) {
         switch (v.getId()){
-            case R.id.sSearchBtn:
-                if(sSearch.isPressed()){
-                    searchChecker++;
-                    if(searchChecker == 2 && focusTxt.equals(sPlace)){
-
-                        sBtn.setVisibility(View.VISIBLE);
-                        eBtn.setVisibility(View.INVISIBLE);
-                        sPlace.setText(searchPlace);
-                        searchPlace(searchPlace, v.getContext());
-                        sPoint = null;
-                        tMapView.removeMarkerItem(60+"");
-                        searchChecker = 0;
-                    }
-                }else{
-                    searchChecker++;
-                    if(sPoint != null){
-                        sPlace.setText(sName);
-                    }
-                    else{
-                        sPlace.setText(null);
-                    }
-                }
-                break;
-
-            case R.id.eSearchBtn:
-                if(eSearch.isPressed()){
-                    searchChecker++;
-                    if(searchChecker == 2 && focusTxt.equals(ePlace)){
-                        sBtn.setVisibility(View.INVISIBLE);
-                        eBtn.setVisibility(View.VISIBLE);
-                        ePlace.setText(searchPlace);
-                        searchPlace(searchPlace, v.getContext());
-                        ePoint = null;
-                        tMapView.removeMarkerItem(61+"");
-                        searchChecker = 0;
-                    }
-                }else{
-                    searchChecker++;
-                    if(ePoint != null){
-                        ePlace.setText(eName);
-                    }
-                    else{
-                        ePlace.setText(null);
-                    }
-                }
-                break;
             case R.id.btnStart:
-                tMapView.removeMarkerItem(60+"");
+                tMapView.removeMarkerItem(101+"");
                 sName = placeName.getText().toString();
                 sPoint = setUserPoint(sPlace, placeName.getText().toString(), fLat, fLon);
-                setMarker(60, sName, sPoint.getLatitude(), sPoint.getLongitude(), pin);
+                setMarker(101, sName, sPoint.getLatitude(), sPoint.getLongitude(), sPin);
                 deleteAllMarker();
                 startNavi();
                 break;
             case R.id.btnEnd:
-                tMapView.removeMarkerItem(61+"");
+                tMapView.removeMarkerItem(102+"");
                 eName = placeName.getText().toString();
                 ePoint = setUserPoint(ePlace, placeName.getText().toString(), fLat, fLon);
-                setMarker(61, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
+                setMarker(102, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
                 deleteAllMarker();
                 startNavi();
                 break;
@@ -245,14 +219,23 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         txt.setText(name);
         return point;
     }
-    private void searchPlace(String userPlace, Context context){
+    private void searchPlaceFunc(String userPlace, Context context, String type){
         deleteAllMarker();
         String place = userPlace;
         TMapData tmapdata = new TMapData();
         Handler handler = new Handler(Looper.getMainLooper());
         Thread thread = new Thread(() -> {
             try {
-                ArrayList<TMapPOIItem> poiItem = tmapdata.findAllPOI(place, 50);
+                ArrayList<TMapPOIItem> poiItem = new ArrayList<>();
+                if(type == "start"){
+                    setMarker(102, eName, ePoint.getLatitude(), ePoint.getLongitude(), pin);
+                    poiItem = tmapdata.findAroundKeywordPOI(ePoint,place, 33,100);
+                }
+                else{
+                    Log.d("SELEC", "EPOINT &" + place);
+                    setMarker(101, sName, sPoint.getLatitude(), sPoint.getLongitude(), sPin);
+                    poiItem = tmapdata.findAroundKeywordPOI(sPoint,place, 33,100);
+                }
                 int len = poiItem.size();
                 if (len > 0) {
                     addrs = new String[len];
@@ -316,7 +299,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         });
     }
     void deleteAllMarker(){
-        for(int i= 0; i< 50; i++){
+        for(int i= 0; i< 100; i++){
             tMapView.removeMarkerItem(i+"");
         }
     }
