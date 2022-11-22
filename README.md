@@ -31,10 +31,10 @@
 
 ## 사용 API
 
-- T맵 API
+- [T맵 API](https://tmapapi.sktelecom.com/index.html)
 <div align="center"> <img src = "https://user-images.githubusercontent.com/85219721/203322710-52214e56-e5d2-4767-b2ec-bac2f08f578d.png" width = "120" height = "120"/></div>
 
-- AR Core (Geospatial API)
+- [AR Core (Geospatial API)](https://developers.google.com/ar/develop/geospatial)
 <div align="center"><img src = "https://user-images.githubusercontent.com/85219721/203322773-cc9a7ed3-c282-4149-ae8c-130ad56add6a.png" width = "180" height = "100"/></div>
 
 ---
