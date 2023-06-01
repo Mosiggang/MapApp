@@ -65,7 +65,7 @@ public class SelectPoint extends AppCompatActivity implements View.OnClickListen
         sBtn = (Button)findViewById(R.id.btnStart);
         eBtn = (Button)findViewById(R.id.btnEnd);
         tMapView = new TMapView(this);
-        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
+        tMapView.setSKTMapApiKey("T MAP API KEY HERE");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);

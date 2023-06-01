@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btnStart = (Button)findViewById(R.id.btnStart);
         btnEnd = (Button)findViewById(R.id.btnEnd);
         slide = (SlidingUpPanelLayout)findViewById(R.id.slide);
-        tMapView.setSKTMapApiKey("l7xx4df6476b09fd4a12962883291fb19544");
+        tMapView.setSKTMapApiKey("T MAP API KEY HERE");
         linearLayoutTmap.addView(tMapView);
         slide.setTouchEnabled(false);
         slide.setPanelState(SlidingUpPanelLayout.PanelState.COLLAPSED);
